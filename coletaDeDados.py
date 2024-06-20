@@ -7,6 +7,20 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
+def scroll_pagina(driver):
+    last_height = driver.execute_script("return document.body.scrollHeight")
+    
+    while True:
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        
+        time.sleep(2)
+        new_height = driver.execute_script("return document.body.scrollHeight")
+        
+        if new_height == last_height:
+            break
+        
+        last_height = new_height
+
 def obter_tweets(nome_perfil):
     url_base = f"https://twitter.com/{nome_perfil}"
     
@@ -17,18 +31,11 @@ def obter_tweets(nome_perfil):
     driver.get(url_base)
     
     try:
-        WebDriverWait(driver, 30).until(
+        WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.XPATH, '//div[@data-testid="tweet"]'))
         )
         
-        last_height = driver.execute_script("return document.body.scrollHeight")
-        while True:
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(8)  
-            new_height = driver.execute_script("return document.body.scrollHeight")
-            if new_height == last_height:
-                break
-            last_height = new_height
+        scroll_pagina(driver)
         
         tweets = driver.find_elements(By.XPATH, '//div[@data-testid="tweet"]')
         
