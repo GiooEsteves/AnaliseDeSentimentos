@@ -7,7 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
-def obter_tweets_de_hoje(nome_perfil):
+def obter_tweets(nome_perfil):
     url_base = f"https://twitter.com/{nome_perfil}"
     
     servico = Service(ChromeDriverManager().install())
@@ -17,35 +17,43 @@ def obter_tweets_de_hoje(nome_perfil):
     driver.get(url_base)
     
     try:
-        # Esperar até que os tweets estejam carregados
         WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.XPATH, '//div[@data-testid="tweet"]'))
         )
         
-        tweets = driver.find_elements(By.XPATH, '//div[@data-testid="tweet"]')
+        last_height = driver.execute_script("return document.body.scrollHeight")
+        while True:
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(8)  
+            new_height = driver.execute_script("return document.body.scrollHeight")
+            if new_height == last_height:
+                break
+            last_height = new_height
         
-        hoje = datetime.now().strftime('%d de %b')
+        tweets = driver.find_elements(By.XPATH, '//div[@data-testid="tweet"]')
         
         for tweet in tweets:
             try:
-                # Esperar até que o texto do tweet esteja presente
                 elemento_texto_tweet = WebDriverWait(tweet, 10).until(
                     EC.presence_of_element_located((By.XPATH, './/div[2]/div[2]/div[1]'))
                 )
                 texto_tweet = elemento_texto_tweet.text
                 
-                # Encontra a data do tweet
                 elemento_data_tweet = tweet.find_element(By.XPATH, './/time')
                 data_tweet = elemento_data_tweet.get_attribute('datetime')
                 data_tweet_formatada = datetime.strptime(data_tweet, '%Y-%m-%dT%H:%M:%S.%fZ').strftime('%d de %b')
                 
-                if data_tweet_formatada == hoje:
-                    print(texto_tweet)
+                print(f"Data do tweet: {data_tweet_formatada}")
+                print(f"Tweet: {texto_tweet}")
+                print("-" * 50)
+                
             except Exception as e:
                 print(f"Erro ao extrair o texto ou data do tweet: {e}")
+    
     except Exception as e:
         print(f"Erro ao carregar a página ou encontrar tweets: {e}")
+    
     finally:
         driver.quit()
 
-obter_tweets_de_hoje('raquellyra')
+obter_tweets('raquellyra')
